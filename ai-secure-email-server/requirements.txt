@@ -1,0 +1,32 @@
+# Web Framework
+Flask
+Flask-CORS
+Flask-SocketIO
+
+# Database
+pymongo
+
+# AI/ML and API
+requests
+
+# Security & Cryptography
+cryptography
+PyJWT
+
+# Web Interface
+streamlit
+plotly
+
+# Data Processing
+pandas
+
+# Real-time Communication
+python-socketio
+
+# Utilities
+python-dotenv
+
+# Additional dependencies for enhanced features
+bcrypt
+secure
+validators
