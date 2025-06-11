@@ -71,7 +71,7 @@ export function InteractiveDCNMonitor({ socket }: InteractiveDCNMonitorProps) {
   const [showProcessDetails, setShowProcessDetails] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Enhanced protocol nodes including IMAP and POP3
+  // Enhanced protocol nodes with fixed positions for better layout
   const protocolNodes: ProtocolNode[] = [
     {
       id: "smtp",
@@ -578,7 +578,7 @@ export function InteractiveDCNMonitor({ socket }: InteractiveDCNMonitorProps) {
           </Card>
         </motion.div>
 
-        {/* Enhanced Center Panel - Main Visualization */}
+        {/* Enhanced Center Panel - Main Visualization with FIXED LAYOUT */}
         <motion.div
           className="lg:col-span-2"
           initial={{ opacity: 0, y: 50 }}
@@ -612,112 +612,387 @@ export function InteractiveDCNMonitor({ socket }: InteractiveDCNMonitorProps) {
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent className="relative h-[600px] overflow-hidden">
-              {/* Enhanced Protocol Flow Visualization */}
-              <div className="absolute inset-0 flex items-center justify-center">
+            <CardContent className="relative h-[650px] overflow-hidden">
+              {/* Protocol Flow Visualization - FIXED LAYOUT */}
+              <div className="absolute inset-0 flex items-center justify-center pt-4 pb-32">
+                {/* Increased bottom padding to make room for explanation panel */}
                 <div className="relative w-full max-w-4xl h-full">
-                  {/* Connection Lines */}
+                  {/* Connection Lines with FIXED COORDINATES */}
                   <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }}>
-                    {protocolNodes.map((node) =>
-                      node.connections.map((targetId) => {
-                        const target = protocolNodes.find((n) => n.id === targetId)
-                        if (!target) return null
-
-                        // Enhanced positioning for better layout
-                        const startX = node.position.x * 30 + 15
-                        const startY = node.position.y * 20 + 15
-                        const endX = target.position.x * 30 + 15
-                        const endY = target.position.y * 20 + 15
-
-                        const isActive =
+                    {/* SMTP to TLS */}
+                    <motion.path
+                      d="M 120,100 L 320,200"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "smtp" || currentStep?.focusProtocol === "tls")
+                          ? "#ff0080"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "smtp" || currentStep?.focusProtocol === "tls")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "smtp" || currentStep?.focusProtocol === "tls")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
                           isPlaying &&
                           !isPaused &&
-                          (node.id === currentStep?.focusProtocol || targetId === currentStep?.focusProtocol)
+                          (currentStep?.focusProtocol === "smtp" || currentStep?.focusProtocol === "tls")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "smtp" || currentStep?.focusProtocol === "tls")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
 
-                        return (
-                          <motion.line
-                            key={`${node.id}-${targetId}`}
-                            x1={`${startX}%`}
-                            y1={`${startY}%`}
-                            x2={`${endX}%`}
-                            y2={`${endY}%`}
-                            stroke={isActive ? node.color : "#444"}
-                            strokeWidth={isActive ? 4 : 2}
-                            strokeDasharray={isActive ? "none" : "8,4"}
-                            initial={{ pathLength: 0, opacity: 0.3 }}
-                            animate={{
-                              pathLength: isActive ? 1 : 0.5,
-                              opacity: isActive ? 1 : 0.4,
-                              strokeWidth: isActive ? 4 : 2,
-                            }}
-                            transition={{ duration: 1.5, ease: "easeInOut" }}
-                          />
-                        )
-                      }),
-                    )}
+                    {/* IMAP to TLS */}
+                    <motion.path
+                      d="M 320,100 L 320,200"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "imap" || currentStep?.focusProtocol === "tls")
+                          ? "#ffa500"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "imap" || currentStep?.focusProtocol === "tls")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "imap" || currentStep?.focusProtocol === "tls")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "imap" || currentStep?.focusProtocol === "tls")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "imap" || currentStep?.focusProtocol === "tls")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+
+                    {/* POP3 to TLS */}
+                    <motion.path
+                      d="M 520,100 L 320,200"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "pop3" || currentStep?.focusProtocol === "tls")
+                          ? "#00ff80"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "pop3" || currentStep?.focusProtocol === "tls")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "pop3" || currentStep?.focusProtocol === "tls")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "pop3" || currentStep?.focusProtocol === "tls")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "pop3" || currentStep?.focusProtocol === "tls")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+
+                    {/* TLS to TCP */}
+                    <motion.path
+                      d="M 320,200 L 320,300"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "tls" || currentStep?.focusProtocol === "tcp")
+                          ? "#8a2be2"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "tls" || currentStep?.focusProtocol === "tcp")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "tls" || currentStep?.focusProtocol === "tcp")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "tls" || currentStep?.focusProtocol === "tcp")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "tls" || currentStep?.focusProtocol === "tcp")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+
+                    {/* TCP to AI */}
+                    <motion.path
+                      d="M 320,300 L 120,400"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "tcp" || currentStep?.focusProtocol === "ai")
+                          ? "#00ffff"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "tcp" || currentStep?.focusProtocol === "ai")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "tcp" || currentStep?.focusProtocol === "ai")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "tcp" || currentStep?.focusProtocol === "ai")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "tcp" || currentStep?.focusProtocol === "ai")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+
+                    {/* AI to Crypto */}
+                    <motion.path
+                      d="M 120,400 L 320,400"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "ai" || currentStep?.focusProtocol === "crypto")
+                          ? "#ff69b4"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "ai" || currentStep?.focusProtocol === "crypto")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "ai" || currentStep?.focusProtocol === "crypto")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "ai" || currentStep?.focusProtocol === "crypto")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "ai" || currentStep?.focusProtocol === "crypto")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+
+                    {/* Crypto to Database */}
+                    <motion.path
+                      d="M 320,400 L 520,400"
+                      stroke={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "crypto" || currentStep?.focusProtocol === "database")
+                          ? "#ffd700"
+                          : "#444"
+                      }
+                      strokeWidth={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "crypto" || currentStep?.focusProtocol === "database")
+                          ? 4
+                          : 2
+                      }
+                      strokeDasharray={
+                        isPlaying &&
+                        !isPaused &&
+                        (currentStep?.focusProtocol === "crypto" || currentStep?.focusProtocol === "database")
+                          ? "none"
+                          : "8,4"
+                      }
+                      fill="none"
+                      initial={{ pathLength: 0, opacity: 0.3 }}
+                      animate={{
+                        pathLength:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "crypto" || currentStep?.focusProtocol === "database")
+                            ? 1
+                            : 0.5,
+                        opacity:
+                          isPlaying &&
+                          !isPaused &&
+                          (currentStep?.focusProtocol === "crypto" || currentStep?.focusProtocol === "database")
+                            ? 1
+                            : 0.4,
+                      }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
                   </svg>
 
-                  {/* Enhanced Protocol Nodes */}
-                  <div className="grid grid-cols-3 gap-6 relative z-10 h-full">
-                    {protocolNodes.map((node) => {
-                      const isActive = isPlaying && !isPaused && node.id === currentStep?.focusProtocol
-                      const isSelected = selectedProtocol === node.id
+                  {/* Protocol Nodes with FIXED POSITIONS */}
+                  <div className="absolute inset-0">
+                    {/* Row 1: SMTP, IMAP, POP3 */}
+                    <ProtocolNode
+                      node={protocolNodes[0]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "smtp"}
+                      isSelected={selectedProtocol === "smtp"}
+                      onClick={() => handleProtocolSelect("smtp")}
+                      style={{ left: "60px", top: "50px", width: "120px", height: "100px" }}
+                    />
 
-                      return (
-                        <motion.div
-                          key={node.id}
-                          className={`p-4 rounded-xl cursor-pointer transition-all duration-500 ${
-                            isActive || isSelected ? "ring-4" : "ring-1"
-                          }`}
-                          style={{
-                            gridColumn: node.position.x + 1,
-                            gridRow: node.position.y + 1,
-                            backgroundColor: `${node.color}15`,
-                            borderColor: node.color,
-                            boxShadow: isActive ? `0 0 25px ${node.color}60` : "none",
-                            border: `2px solid ${isActive || isSelected ? node.color : node.color + "40"}`,
-                          }}
-                          onClick={() => handleProtocolSelect(node.id)}
-                          whileHover={{ scale: 1.05, y: -5 }}
-                          whileTap={{ scale: 0.95 }}
-                          animate={{
-                            scale: isActive ? 1.1 : 1,
-                            boxShadow: isActive ? `0 0 30px ${node.color}80` : "none",
-                            y: isActive ? -10 : 0,
-                          }}
-                          transition={{ duration: 0.5, ease: "easeInOut" }}
-                        >
-                          <div className="flex flex-col items-center text-center gap-3">
-                            <motion.div
-                              className="w-16 h-16 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: `${node.color}30` }}
-                              animate={{
-                                backgroundColor: isActive ? `${node.color}50` : `${node.color}30`,
-                              }}
-                            >
-                              {node.icon}
-                            </motion.div>
-                            <h3 className="font-bold text-white text-sm">{node.name}</h3>
-                            <AnimatePresence>
-                              {node.processes.length > 0 && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0 }}
-                                >
-                                  <Badge className="bg-neon-pink text-white text-xs">
-                                    {node.processes.length} active
-                                  </Badge>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </motion.div>
-                      )
-                    })}
+                    <ProtocolNode
+                      node={protocolNodes[1]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "imap"}
+                      isSelected={selectedProtocol === "imap"}
+                      onClick={() => handleProtocolSelect("imap")}
+                      style={{ left: "260px", top: "50px", width: "120px", height: "100px" }}
+                    />
+
+                    <ProtocolNode
+                      node={protocolNodes[2]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "pop3"}
+                      isSelected={selectedProtocol === "pop3"}
+                      onClick={() => handleProtocolSelect("pop3")}
+                      style={{ left: "460px", top: "50px", width: "120px", height: "100px" }}
+                    />
+
+                    {/* Row 2: TLS */}
+                    <ProtocolNode
+                      node={protocolNodes[3]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "tls"}
+                      isSelected={selectedProtocol === "tls"}
+                      onClick={() => handleProtocolSelect("tls")}
+                      style={{ left: "260px", top: "150px", width: "120px", height: "100px" }}
+                    />
+
+                    {/* Row 3: TCP */}
+                    <ProtocolNode
+                      node={protocolNodes[4]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "tcp"}
+                      isSelected={selectedProtocol === "tcp"}
+                      onClick={() => handleProtocolSelect("tcp")}
+                      style={{ left: "260px", top: "250px", width: "120px", height: "100px" }}
+                    />
+
+                    {/* Row 4: AI, Crypto, Database */}
+                    <ProtocolNode
+                      node={protocolNodes[5]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "ai"}
+                      isSelected={selectedProtocol === "ai"}
+                      onClick={() => handleProtocolSelect("ai")}
+                      style={{ left: "60px", top: "350px", width: "120px", height: "100px" }}
+                    />
+
+                    <ProtocolNode
+                      node={protocolNodes[6]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "crypto"}
+                      isSelected={selectedProtocol === "crypto"}
+                      onClick={() => handleProtocolSelect("crypto")}
+                      style={{ left: "260px", top: "350px", width: "120px", height: "100px" }}
+                    />
+
+                    <ProtocolNode
+                      node={protocolNodes[7]}
+                      isActive={isPlaying && !isPaused && currentStep?.focusProtocol === "database"}
+                      isSelected={selectedProtocol === "database"}
+                      onClick={() => handleProtocolSelect("database")}
+                      style={{ left: "460px", top: "350px", width: "120px", height: "100px" }}
+                    />
                   </div>
 
-                  {/* Enhanced Data Flow Animation */}
+                  {/* Enhanced Data Flow Animation with FIXED COORDINATES */}
                   {isPlaying && !isPaused && currentStep && (
                     <DataFlowAnimation
                       currentStep={currentStoryStep}
@@ -728,7 +1003,7 @@ export function InteractiveDCNMonitor({ socket }: InteractiveDCNMonitorProps) {
                 </div>
               </div>
 
-              {/* Enhanced Step Explanation Overlay */}
+              {/* Enhanced Step Explanation Overlay - FIXED POSITION */}
               <AnimatePresence>
                 {isPlaying && showExplanation && currentStep && (
                   <motion.div
@@ -736,7 +1011,7 @@ export function InteractiveDCNMonitor({ socket }: InteractiveDCNMonitorProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 100 }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="absolute bottom-0 left-0 right-0 p-6 bg-black/80 backdrop-blur-lg rounded-t-xl border-t border-neon-pink/30"
+                    className="absolute bottom-0 left-0 right-0 p-6 bg-black/80 backdrop-blur-lg rounded-t-xl border-t border-neon-pink/30 z-50"
                   >
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
@@ -824,7 +1099,70 @@ export function InteractiveDCNMonitor({ socket }: InteractiveDCNMonitorProps) {
   )
 }
 
-// Enhanced Data Flow Animation Component
+// Protocol Node Component for fixed positioning
+function ProtocolNode({
+  node,
+  isActive,
+  isSelected,
+  onClick,
+  style,
+}: {
+  node: ProtocolNode
+  isActive: boolean
+  isSelected: boolean
+  onClick: () => void
+  style: React.CSSProperties
+}) {
+  return (
+    <motion.div
+      className={`absolute p-4 rounded-xl cursor-pointer transition-all duration-500 ${
+        isActive || isSelected ? "ring-4" : "ring-1"
+      }`}
+      style={{
+        ...style,
+        backgroundColor: `${node.color}15`,
+        borderColor: node.color,
+        boxShadow: isActive ? `0 0 25px ${node.color}60` : "none",
+        border: `2px solid ${isActive || isSelected ? node.color : node.color + "40"}`,
+      }}
+      onClick={onClick}
+      whileHover={{ scale: 1.05, y: -5 }}
+      whileTap={{ scale: 0.95 }}
+      animate={{
+        scale: isActive ? 1.1 : 1,
+        boxShadow: isActive ? `0 0 30px ${node.color}80` : "none",
+        y: isActive ? -10 : 0,
+      }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+    >
+      <div className="flex flex-col items-center text-center gap-2">
+        <motion.div
+          className="w-12 h-12 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: `${node.color}30` }}
+          animate={{
+            backgroundColor: isActive ? `${node.color}50` : `${node.color}30`,
+          }}
+        >
+          {node.icon}
+        </motion.div>
+        <h3 className="font-bold text-white text-sm">{node.name}</h3>
+        <AnimatePresence>
+          {node.processes.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0 }}
+            >
+              <Badge className="bg-neon-pink text-white text-xs">{node.processes.length} active</Badge>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  )
+}
+
+// Enhanced Data Flow Animation Component with FIXED COORDINATES
 function DataFlowAnimation({
   currentStep,
   protocolNodes,
@@ -839,15 +1177,40 @@ function DataFlowAnimation({
 
   if (!protocol) return null
 
+  // Get the next protocol based on connections
   const nextProtocolId = protocol.connections[0]
   const nextProtocol = protocolNodes.find((p) => p.id === nextProtocolId)
 
   if (!nextProtocol) return null
 
-  const startX = protocol.position.x * 30 + 15
-  const startY = protocol.position.y * 20 + 15
-  const endX = nextProtocol.position.x * 30 + 15
-  const endY = nextProtocol.position.y * 20 + 15
+  // Define fixed path coordinates based on protocol
+  let pathData = ""
+
+  switch (protocol.id) {
+    case "smtp":
+      pathData = "M 120,100 L 320,200"
+      break
+    case "imap":
+      pathData = "M 320,100 L 320,200"
+      break
+    case "pop3":
+      pathData = "M 520,100 L 320,200"
+      break
+    case "tls":
+      pathData = "M 320,200 L 320,300"
+      break
+    case "tcp":
+      pathData = "M 320,300 L 120,400"
+      break
+    case "ai":
+      pathData = "M 120,400 L 320,400"
+      break
+    case "crypto":
+      pathData = "M 320,400 L 520,400"
+      break
+    default:
+      return null
+  }
 
   return (
     <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 20, pointerEvents: "none" }}>
@@ -869,11 +1232,7 @@ function DataFlowAnimation({
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <animateMotion
-          dur={`${step.animationDuration}s`}
-          repeatCount="indefinite"
-          path={`M ${startX}% ${startY}% L ${endX}% ${endY}%`}
-        />
+        <animateMotion dur={`${step.animationDuration}s`} repeatCount="indefinite" path={pathData} />
       </motion.circle>
 
       {/* Additional particles for enhanced effect */}
@@ -890,7 +1249,7 @@ function DataFlowAnimation({
           <animateMotion
             dur={`${step.animationDuration + i * 0.5}s`}
             repeatCount="indefinite"
-            path={`M ${startX}% ${startY}% L ${endX}% ${endY}%`}
+            path={pathData}
             begin={`${i * 0.3}s`}
           />
         </motion.circle>
@@ -1116,6 +1475,7 @@ function SystemOverview({ protocolNodes, processes }: { protocolNodes: ProtocolN
         </div>
       </motion.div>
 
+// ...existing code...
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
         <h3 className="text-2xl font-semibold text-gray-300 mb-4">System Information</h3>
         <div className="p-6 rounded-xl bg-black/40 border border-gray-600">
@@ -1124,9 +1484,17 @@ function SystemOverview({ protocolNodes, processes }: { protocolNodes: ProtocolN
             reception through multiple security layers to final encrypted storage. Each protocol plays a critical role
             in ensuring secure, reliable, and efficient communication.
           </p>
-          <p className="text-gray-300 text-lg leading-relaxed">
-            Click on any protocol node to view detailed information and process history, or use the Story Mode to take a
-            guided tour through the entire process flow with detailed explanations at each step.
+          <p className="text-gray-400 text-base mb-2">
+            <span className="font-semibold text-neon-pink">Protocols Visualized:</span> SMTP, IMAP, POP3, TLS, TCP/IP, AI Analysis, Encryption, and Database.
+          </p>
+          <p className="text-gray-400 text-base mb-2">
+            <span className="font-semibold text-electric-blue">Live Monitoring:</span> Track protocol activity, process history, and security status in real time.
+          </p>
+          <p className="text-gray-400 text-base mb-2">
+            <span className="font-semibold text-yellow-400">Security:</span> End-to-end encryption, AI-powered threat detection, and robust auditing.
+          </p>
+          <p className="text-gray-400 text-base">
+            <span className="font-semibold text-green-400">Resilience:</span> Redundant storage, automated backups, and high-availability design.
           </p>
         </div>
       </motion.div>
