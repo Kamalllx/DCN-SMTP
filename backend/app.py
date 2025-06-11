@@ -873,21 +873,83 @@ def get_email_history():
 @app.route('/api/email/<email_id>/report')
 @EnhancedAuthUtils.require_auth
 def get_email_report(email_id):
-    """Get detailed email analysis report"""
+    """Get detailed email analysis report with debugging"""
     try:
         user_email = request.current_user.get('email')
+        print(f"[DEBUG] ===== DETAILED REPORT REQUEST =====")
+        print(f"[DEBUG] Email ID: {email_id}")
+        print(f"[DEBUG] Requested by user: {user_email}")
+        
         email = email_model.get_email_by_id(email_id)
         
         if not email:
+            print(f"[DEBUG] ❌ Email not found in database: {email_id}")
             return jsonify({'error': 'Email not found'}), 404
+        
+        print(f"[DEBUG] ✅ Email found - From: {email.get('from')}, Subject: {email.get('subject')}")
         
         # Check access permissions
         if (email.get('from') != user_email and user_email not in email.get('to', [])):
+            print(f"[DEBUG] ❌ Access denied - User {user_email} cannot access email from {email.get('from')}")
             return jsonify({'error': 'Access denied'}), 403
+        
+        print(f"[DEBUG] ✅ Access granted for user: {user_email}")
         
         report = email_model.get_detailed_email_report(email_id)
         if not report:
+            print(f"[DEBUG] ❌ Report generation failed for email: {email_id}")
             return jsonify({'error': 'Report not available'}), 404
+        
+        print(f"[DEBUG] ===== DETAILED REPORT GENERATED =====")
+        print(f"[DEBUG] Report keys: {list(report.keys())}")
+        
+        if 'email_data' in report:
+            email_data = report['email_data']
+            print(f"[DEBUG] Email Data:")
+            print(f"[DEBUG]   - From: {email_data.get('from')}")
+            print(f"[DEBUG]   - To: {email_data.get('to')}")
+            print(f"[DEBUG]   - Subject: {email_data.get('subject')}")
+            print(f"[DEBUG]   - TLS Used: {email_data.get('tls_used')}")
+            print(f"[DEBUG]   - Is Encrypted: {email_data.get('is_encrypted')}")
+            
+            ai_analysis = email_data.get('ai_analysis', {})
+            if ai_analysis:
+                print(f"[DEBUG] AI Analysis:")
+                
+                # Spam Analysis
+                spam_analysis = ai_analysis.get('spam_analysis', {})
+                if spam_analysis:
+                    print(f"[DEBUG]   Spam Analysis:")
+                    print(f"[DEBUG]     - Is Spam: {spam_analysis.get('is_spam')}")
+                    print(f"[DEBUG]     - Confidence: {spam_analysis.get('confidence')}")
+                    print(f"[DEBUG]     - Threat Level: {spam_analysis.get('threat_level')}")
+                    print(f"[DEBUG]     - Reasons: {spam_analysis.get('reasons')}")
+                
+                # Keyword Analysis
+                keyword_analysis = ai_analysis.get('keyword_analysis', {})
+                if keyword_analysis:
+                    print(f"[DEBUG]   Keyword Analysis:")
+                    print(f"[DEBUG]     - Keywords Detected: {keyword_analysis.get('keywords_detected')}")
+                    print(f"[DEBUG]     - Keywords Found: {keyword_analysis.get('keywords_found')}")
+                    print(f"[DEBUG]     - Risk Assessment: {keyword_analysis.get('risk_assessment')}")
+                
+                # Security Analysis
+                security_analysis = ai_analysis.get('security_analysis', {})
+                if security_analysis:
+                    print(f"[DEBUG]   Security Analysis:")
+                    print(f"[DEBUG]     - Is Phishing: {security_analysis.get('is_phishing')}")
+                    print(f"[DEBUG]     - Risk Level: {security_analysis.get('risk_level')}")
+                    print(f"[DEBUG]     - Indicators: {security_analysis.get('indicators')}")
+                
+                # Categorization
+                categorization = ai_analysis.get('categorization', {})
+                if categorization:
+                    print(f"[DEBUG]   Categorization:")
+                    print(f"[DEBUG]     - Category: {categorization.get('category')}")
+                    print(f"[DEBUG]     - Priority: {categorization.get('priority')}")
+                    print(f"[DEBUG]     - Action Required: {categorization.get('action_required')}")
+        
+        print(f"[DEBUG] ===== END DETAILED REPORT =====")
         
         # Convert ObjectId to string for JSON serialization
         if '_id' in report['email_data']:
@@ -895,9 +957,11 @@ def get_email_report(email_id):
         
         return jsonify(report)
     except Exception as e:
-        logger.error(f"Get email report error: {e}")
+        print(f"[ERROR] ❌ Get email report error: {e}")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to retrieve email report'}), 500
-
 @app.route('/api/send-test-email', methods=['POST'])
 @EnhancedAuthUtils.require_auth
 def send_test_email():
@@ -992,53 +1056,108 @@ def send_test_email():
         return jsonify({"error": "Failed to send email"}), 500
 
 # Enhanced AI Routes
-@app.route('/api/ai/comprehensive-analysis', methods=['POST'])
-@EnhancedAuthUtils.require_auth
-def comprehensive_analysis():
-    """Comprehensive AI analysis with keyword highlighting"""
-    try:
-        data = request.get_json()
-        content = data.get('content', '')
-        subject = data.get('subject', '')
-        sender = data.get('sender', '')
-        
-        if not content:
-            return jsonify({"error": "Content is required"}), 400
-        
-        # Create email data for processing
-        email_data = {
-            'content': content,
-            'subject': subject,
-            'from': sender,
-            'analysis_requested_by': request.current_user.get('email')
-        }
-        
-        # Process with comprehensive AI analysis
-        processed_email = ai_service.process_incoming_email(email_data)
-        
-        # Enhanced spam keyword analysis
-        spam_keywords = keyword_highlighter.find_spam_keywords(content, subject)
-        keyword_report = keyword_highlighter.generate_keyword_report(
-            spam_keywords,
-            processed_email.get('ai_analysis', {}).get('spam_analysis', {}).get('confidence', 0)
-        )
-        
-        # Add keyword analysis
-        if 'ai_analysis' not in processed_email:
-            processed_email['ai_analysis'] = {}
-        
-        processed_email['ai_analysis']['keyword_analysis'] = keyword_report
-        processed_email['ai_analysis']['highlighted_content'] = keyword_highlighter.highlight_keywords(content, spam_keywords)
-        
-        analysis = processed_email.get('ai_analysis', {})
-        
-        log_model.log_activity('AI_COMPREHENSIVE', f'Comprehensive analysis performed', user_email=request.current_user.get('email'))
-        
-        return jsonify(analysis)
-    except Exception as e:
-        logger.error(f"Comprehensive analysis failed: {e}")
-        return jsonify({"error": str(e)}), 500
 
+# @app.route('/api/ai/comprehensive-analysis', methods=['POST'])
+# @EnhancedAuthUtils.require_auth
+# def comprehensive_analysis():
+#     """Comprehensive AI analysis with detailed debugging"""
+#     try:
+#         data = request.get_json()
+#         content = data.get('content', '')
+#         subject = data.get('subject', '')
+#         sender = data.get('sender', '')
+        
+#         print(f"[DEBUG] ===== COMPREHENSIVE AI ANALYSIS REQUEST =====")
+#         print(f"[DEBUG] Content length: {len(content)}")
+#         print(f"[DEBUG] Subject: {subject}")
+#         print(f"[DEBUG] Sender: {sender}")
+#         print(f"[DEBUG] Requested by: {request.current_user.get('email')}")
+        
+#         if not content:
+#             print("[DEBUG] ❌ Empty content provided for analysis")
+#             return jsonify({"error": "Content is required"}), 400
+        
+#         # Create email data for processing
+#         email_data = {
+#             'content': content,
+#             'subject': subject,
+#             'from': sender,
+#             'analysis_requested_by': request.current_user.get('email')
+#         }
+        
+#         print(f"[DEBUG] 🤖 Starting AI processing...")
+        
+#         # Process with comprehensive AI analysis
+#         processed_email = ai_service.process_incoming_email(email_data)
+        
+#         print(f"[DEBUG] ✅ AI processing completed")
+        
+#         # Enhanced spam keyword analysis
+#         spam_keywords = keyword_highlighter.find_spam_keywords(content, subject)
+#         print(f"[DEBUG] 🔍 Spam keywords found: {spam_keywords}")
+        
+#         keyword_report = keyword_highlighter.generate_keyword_report(
+#             spam_keywords,
+#             processed_email.get('ai_analysis', {}).get('spam_analysis', {}).get('confidence', 0)
+#         )
+        
+#         print(f"[DEBUG] 📊 Keyword report generated: {keyword_report.get('keywords_detected', 0)} keywords")
+        
+#         # Add keyword analysis
+#         if 'ai_analysis' not in processed_email:
+#             processed_email['ai_analysis'] = {}
+        
+#         processed_email['ai_analysis']['keyword_analysis'] = keyword_report
+#         processed_email['ai_analysis']['highlighted_content'] = keyword_highlighter.highlight_keywords(content, spam_keywords)
+        
+#         analysis = processed_email.get('ai_analysis', {})
+        
+#         print(f"[DEBUG] ===== COMPREHENSIVE ANALYSIS RESULTS =====")
+        
+#         # Print spam analysis
+#         spam_analysis = analysis.get('spam_analysis', {})
+#         if spam_analysis:
+#             print(f"[DEBUG] 🛡️ Spam Analysis:")
+#             print(f"[DEBUG]   - Is Spam: {spam_analysis.get('is_spam')}")
+#             print(f"[DEBUG]   - Confidence: {spam_analysis.get('confidence'):.3f}")
+#             print(f"[DEBUG]   - Threat Level: {spam_analysis.get('threat_level')}")
+#             print(f"[DEBUG]   - Categories: {spam_analysis.get('categories')}")
+#             print(f"[DEBUG]   - Reasons: {spam_analysis.get('reasons')}")
+        
+#         # Print keyword analysis
+#         keyword_analysis = analysis.get('keyword_analysis', {})
+#         if keyword_analysis:
+#             print(f"[DEBUG] 🔍 Keyword Analysis:")
+#             print(f"[DEBUG]   - Keywords Detected: {keyword_analysis.get('keywords_detected')}")
+#             print(f"[DEBUG]   - Risk Assessment: {keyword_analysis.get('risk_assessment')}")
+#             print(f"[DEBUG]   - Keywords Found: {keyword_analysis.get('keywords_found')}")
+        
+#         # Print security analysis
+#         security_analysis = analysis.get('security_analysis', {})
+#         if security_analysis:
+#             print(f"[DEBUG] 🔒 Security Analysis:")
+#             print(f"[DEBUG]   - Is Phishing: {security_analysis.get('is_phishing')}")
+#             print(f"[DEBUG]   - Risk Level: {security_analysis.get('risk_level')}")
+        
+#         # Print categorization
+#         categorization = analysis.get('categorization', {})
+#         if categorization:
+#             print(f"[DEBUG] 📂 Categorization:")
+#             print(f"[DEBUG]   - Category: {categorization.get('category')}")
+#             print(f"[DEBUG]   - Priority: {categorization.get('priority')}")
+#             print(f"[DEBUG]   - Action Required: {categorization.get('action_required')}")
+        
+#         print(f"[DEBUG] ===== END COMPREHENSIVE ANALYSIS =====")
+        
+#         log_model.log_activity('AI_COMPREHENSIVE', f'Comprehensive analysis performed', user_email=request.current_user.get('email'))
+        
+#         return jsonify(analysis)
+#     except Exception as e:
+#         print(f"[ERROR] ❌ Comprehensive analysis failed: {e}")
+#         print(f"[ERROR] Exception type: {type(e).__name__}")
+#         import traceback
+#         print(f"[ERROR] Traceback: {traceback.format_exc()}")
+#         return jsonify({"error": str(e)}), 500
 # Server Management Routes
 @app.route('/api/servers/start', methods=['POST'])
 def start_servers():
@@ -1139,7 +1258,204 @@ def get_logs():
     except Exception as e:
         logger.error(f"Failed to get logs: {e}")
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/ai/comprehensive-analysis', methods=['POST'])
+@EnhancedAuthUtils.require_auth
+def comprehensive_analysis():
+    """Comprehensive AI analysis with detailed debugging"""
+    try:
+        data = request.get_json()
+        content = data.get('content', '')
+        subject = data.get('subject', '')
+        sender = data.get('sender', '')
+        
+        print(f"[DEBUG] ===== COMPREHENSIVE AI ANALYSIS REQUEST =====")
+        print(f"[DEBUG] Content length: {len(content)}")
+        print(f"[DEBUG] Subject: {subject}")
+        print(f"[DEBUG] Sender: {sender}")
+        print(f"[DEBUG] Requested by: {request.current_user.get('email')}")
+        
+        if not content:
+            print("[DEBUG] ❌ Empty content provided for analysis")
+            return jsonify({"error": "Content is required"}), 400
+        
+        # Create email data for processing
+        email_data = {
+            'content': content,
+            'subject': subject,
+            'from': sender,
+            'analysis_requested_by': request.current_user.get('email')
+        }
+        
+        print(f"[DEBUG] 🤖 Starting AI processing...")
+        
+        # Process with comprehensive AI analysis
+        processed_email = ai_service.process_incoming_email(email_data)
+        
+        print(f"[DEBUG] ✅ AI processing completed")
+        
+        # Enhanced spam keyword analysis
+        spam_keywords = keyword_highlighter.find_spam_keywords(content, subject)
+        print(f"[DEBUG] 🔍 Spam keywords found: {spam_keywords}")
+        
+        keyword_report = keyword_highlighter.generate_keyword_report(
+            spam_keywords,
+            processed_email.get('ai_analysis', {}).get('spam_analysis', {}).get('confidence', 0)
+        )
+        
+        print(f"[DEBUG] 📊 Keyword report generated: {keyword_report.get('keywords_detected', 0)} keywords")
+        
+        # Add keyword analysis
+        if 'ai_analysis' not in processed_email:
+            processed_email['ai_analysis'] = {}
+        
+        processed_email['ai_analysis']['keyword_analysis'] = keyword_report
+        processed_email['ai_analysis']['highlighted_content'] = keyword_highlighter.highlight_keywords(content, spam_keywords)
+        
+        analysis = processed_email.get('ai_analysis', {})
+        
+        print(f"[DEBUG] ===== COMPREHENSIVE ANALYSIS RESULTS =====")
+        
+        # Print spam analysis
+        spam_analysis = analysis.get('spam_analysis', {})
+        if spam_analysis:
+            print(f"[DEBUG] 🛡️ Spam Analysis:")
+            print(f"[DEBUG]   - Is Spam: {spam_analysis.get('is_spam')}")
+            print(f"[DEBUG]   - Confidence: {spam_analysis.get('confidence'):.3f}")
+            print(f"[DEBUG]   - Threat Level: {spam_analysis.get('threat_level')}")
+            print(f"[DEBUG]   - Categories: {spam_analysis.get('categories')}")
+            print(f"[DEBUG]   - Reasons: {spam_analysis.get('reasons')}")
+        
+        # Print keyword analysis
+        keyword_analysis = analysis.get('keyword_analysis', {})
+        if keyword_analysis:
+            print(f"[DEBUG] 🔍 Keyword Analysis:")
+            print(f"[DEBUG]   - Keywords Detected: {keyword_analysis.get('keywords_detected')}")
+            print(f"[DEBUG]   - Risk Assessment: {keyword_analysis.get('risk_assessment')}")
+            print(f"[DEBUG]   - Keywords Found: {keyword_analysis.get('keywords_found')}")
+        
+        # Print security analysis
+        security_analysis = analysis.get('security_analysis', {})
+        if security_analysis:
+            print(f"[DEBUG] 🔒 Security Analysis:")
+            print(f"[DEBUG]   - Is Phishing: {security_analysis.get('is_phishing')}")
+            print(f"[DEBUG]   - Risk Level: {security_analysis.get('risk_level')}")
+        
+        # Print categorization
+        categorization = analysis.get('categorization', {})
+        if categorization:
+            print(f"[DEBUG] 📂 Categorization:")
+            print(f"[DEBUG]   - Category: {categorization.get('category')}")
+            print(f"[DEBUG]   - Priority: {categorization.get('priority')}")
+            print(f"[DEBUG]   - Action Required: {categorization.get('action_required')}")
+        
+        print(f"[DEBUG] ===== END COMPREHENSIVE ANALYSIS =====")
+        
+        log_model.log_activity('AI_COMPREHENSIVE', f'Comprehensive analysis performed', user_email=request.current_user.get('email'))
+        
+        return jsonify(analysis)
+    except Exception as e:
+        print(f"[ERROR] ❌ Comprehensive analysis failed: {e}")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
 
+@app.route('/api/ai/composition-help', methods=['POST'])
+@EnhancedAuthUtils.require_auth
+def composition_help():
+    """Enhanced composition assistance with debugging"""
+    try:
+        data = request.get_json()
+        content = data.get('content', '')
+        context = data.get('context', '')
+        tone = data.get('tone', 'professional')
+        
+        print(f"[DEBUG] ===== COMPOSITION HELP REQUEST =====")
+        print(f"[DEBUG] Content length: {len(content)}")
+        print(f"[DEBUG] Context: {context}")
+        print(f"[DEBUG] Tone: {tone}")
+        print(f"[DEBUG] Requested by: {request.current_user.get('email')}")
+        
+        if not content:
+            print("[DEBUG] ❌ Empty content provided for composition help")
+            return jsonify({"error": "Content is required"}), 400
+        
+        print(f"[DEBUG] 🤖 Starting composition assistance...")
+        
+        result = ai_service.assist_composition(content, context, tone)
+        
+        print(f"[DEBUG] ===== COMPOSITION ASSISTANCE RESULTS =====")
+        print(f"[DEBUG] ✨ Suggestions: {result.get('suggestions', 'N/A')}")
+        
+        subject_options = result.get('subject_options', {})
+        if subject_options:
+            print(f"[DEBUG] 📧 Subject Options:")
+            for tone_type, suggestion in subject_options.items():
+                print(f"[DEBUG]   - {tone_type.title()}: {suggestion}")
+        
+        tone_analysis = result.get('tone_analysis', {})
+        if tone_analysis:
+            print(f"[DEBUG] 🎭 Tone Analysis:")
+            print(f"[DEBUG]   - Current Tone: {tone_analysis.get('current_tone')}")
+            print(f"[DEBUG]   - Sentiment: {tone_analysis.get('sentiment')}")
+            print(f"[DEBUG]   - Professionalism: {tone_analysis.get('professionalism')}/10")
+        
+        print(f"[DEBUG] ===== END COMPOSITION ASSISTANCE =====")
+        
+        log_model.log_activity('AI_COMPOSITION', f'Enhanced composition assistance provided', user_email=request.current_user.get('email'))
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"[ERROR] ❌ Composition help failed: {e}")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/ai/generate-reply', methods=['POST'])
+@EnhancedAuthUtils.require_auth
+def generate_reply():
+    """Generate smart reply with debugging"""
+    try:
+        data = request.get_json()
+        original_email = data.get('original_email', '')
+        context = data.get('context', '')
+        tone = data.get('tone', 'professional')
+        
+        print(f"[DEBUG] ===== REPLY GENERATION REQUEST =====")
+        print(f"[DEBUG] Original email length: {len(original_email)}")
+        print(f"[DEBUG] Context: {context}")
+        print(f"[DEBUG] Tone: {tone}")
+        print(f"[DEBUG] Requested by: {request.current_user.get('email')}")
+        
+        if not original_email:
+            print("[DEBUG] ❌ Empty original email provided for reply generation")
+            return jsonify({"error": "Original email content is required"}), 400
+        
+        print(f"[DEBUG] 🤖 Starting reply generation...")
+        
+        result = ai_service.generate_smart_reply(original_email, context, tone)
+        
+        print(f"[DEBUG] ===== REPLY GENERATION RESULTS =====")
+        print(f"[DEBUG] 💬 Generated Reply: {result.get('reply', 'N/A')}")
+        print(f"[DEBUG] 🎭 Tone Used: {result.get('tone', 'N/A')}")
+        print(f"[DEBUG] ⏰ Generated At: {result.get('generated_at', 'N/A')}")
+        
+        if 'error' in result:
+            print(f"[DEBUG] ⚠️ Error in result: {result.get('error')}")
+        
+        print(f"[DEBUG] ===== END REPLY GENERATION =====")
+        
+        log_model.log_activity('AI_REPLY_GEN', f'Smart reply generated', user_email=request.current_user.get('email'))
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"[ERROR] ❌ Reply generation failed: {e}")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
 @app.route('/api/logs/clear', methods=['POST'])
 def clear_logs():
     """Clear system logs"""

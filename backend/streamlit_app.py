@@ -620,17 +620,122 @@ else:
                         
                         st.markdown(f"**Preview:** {content_preview}")
                         
-                        # Action buttons
+                        # Enhanced action buttons with debug output
                         col1, col2, col3 = st.columns(3)
                         with col1:
                             if st.button(f"📋 Detailed Report", key=f"report_{i}"):
-                                st.session_state[f'show_report_{email["_id"]}'] = True
+                                print(f"[STREAMLIT DEBUG] ===== DETAILED REPORT BUTTON CLICKED =====")
+                                print(f"[STREAMLIT DEBUG] Email ID: {email['_id']}")
+                                print(f"[STREAMLIT DEBUG] Email from: {email.get('from')}")
+                                print(f"[STREAMLIT DEBUG] Email subject: {email.get('subject')}")
+                                
+                                # Fetch detailed report
+                                report_data, error = make_api_request(f"/email/{email['_id']}/report", auth_required=True)
+                                
+                                if report_data:
+                                    print(f"[STREAMLIT DEBUG] ✅ Detailed report fetched successfully")
+                                    print(f"[STREAMLIT DEBUG] Report structure: {list(report_data.keys())}")
+                                    
+                                    email_data = report_data.get('email_data', {})
+                                    print(f"[STREAMLIT DEBUG] Email data keys: {list(email_data.keys())}")
+                                    
+                                    ai_analysis = email_data.get('ai_analysis', {})
+                                    if ai_analysis:
+                                        print(f"[STREAMLIT DEBUG] AI Analysis available with keys: {list(ai_analysis.keys())}")
+                                        
+                                        spam_analysis = ai_analysis.get('spam_analysis', {})
+                                        if spam_analysis:
+                                            print(f"[STREAMLIT DEBUG] 🛡️ Spam Analysis:")
+                                            print(f"[STREAMLIT DEBUG]   - Is Spam: {spam_analysis.get('is_spam')}")
+                                            print(f"[STREAMLIT DEBUG]   - Confidence: {spam_analysis.get('confidence')}")
+                                            print(f"[STREAMLIT DEBUG]   - Threat Level: {spam_analysis.get('threat_level')}")
+                                        
+                                        keyword_analysis = ai_analysis.get('keyword_analysis', {})
+                                        if keyword_analysis:
+                                            print(f"[STREAMLIT DEBUG] 🔍 Keyword Analysis:")
+                                            print(f"[STREAMLIT DEBUG]   - Keywords Detected: {keyword_analysis.get('keywords_detected')}")
+                                            print(f"[STREAMLIT DEBUG]   - Keywords Found: {keyword_analysis.get('keywords_found')}")
+                                            print(f"[STREAMLIT DEBUG]   - Risk Assessment: {keyword_analysis.get('risk_assessment')}")
+                                    
+                                    # Store for display
+                                    st.session_state[f'show_report_{email["_id"]}'] = True
+                                    st.session_state[f'report_data_{email["_id"]}'] = report_data
+                                    
+                                    print(f"[STREAMLIT DEBUG] ===== END DETAILED REPORT =====")
+                                else:
+                                    print(f"[STREAMLIT DEBUG] ❌ Failed to fetch detailed report: {error}")
+
                         with col2:
                             if st.button(f"💬 Reply", key=f"reply_{i}"):
-                                st.session_state['reply_to'] = email
+                                print(f"[STREAMLIT DEBUG] ===== REPLY BUTTON CLICKED =====")
+                                print(f"[STREAMLIT DEBUG] Email ID: {email['_id']}")
+                                print(f"[STREAMLIT DEBUG] Original email content length: {len(email.get('content', ''))}")
+                                
+                                # Generate reply
+                                reply_data, error = make_api_request("/ai/generate-reply", "POST", {
+                                    "original_email": email.get('content', ''),
+                                    "tone": "professional"
+                                }, auth_required=True)
+                                
+                                if reply_data:
+                                    print(f"[STREAMLIT DEBUG] ✅ Reply generated successfully")
+                                    print(f"[STREAMLIT DEBUG] Reply keys: {list(reply_data.keys())}")
+                                    print(f"[STREAMLIT DEBUG] 💬 Generated Reply: {reply_data.get('reply', 'N/A')}")
+                                    print(f"[STREAMLIT DEBUG] 🎭 Tone: {reply_data.get('tone', 'N/A')}")
+                                    
+                                    # Store for display
+                                    st.session_state['reply_to'] = email
+                                    st.session_state[f'reply_data_{email["_id"]}'] = reply_data
+                                    
+                                    print(f"[STREAMLIT DEBUG] ===== END REPLY GENERATION =====")
+                                else:
+                                    print(f"[STREAMLIT DEBUG] ❌ Failed to generate reply: {error}")
+
                         with col3:
                             if st.button(f"🔒 Decrypt & View", key=f"decrypt_{i}"):
+                                print(f"[STREAMLIT DEBUG] ===== DECRYPT & VIEW BUTTON CLICKED =====")
+                                print(f"[STREAMLIT DEBUG] Email ID: {email['_id']}")
+                                
+                                # Get decrypted content (already decrypted when fetched)
+                                content = email.get('content', '')
+                                subject = email.get('subject', '')
+                                from_addr = email.get('from', '')
+                                to_addrs = email.get('to', [])
+                                
+                                print(f"[STREAMLIT DEBUG] ✅ Decrypted email content:")
+                                print(f"[STREAMLIT DEBUG] 📧 From: {from_addr}")
+                                print(f"[STREAMLIT DEBUG] 📧 To: {', '.join(to_addrs) if to_addrs else 'N/A'}")
+                                print(f"[STREAMLIT DEBUG] 📧 Subject: {subject}")
+                                print(f"[STREAMLIT DEBUG] 📧 Content length: {len(content)}")
+                                print(f"[STREAMLIT DEBUG] 📧 Content preview: {content[:200]}...")
+                                print(f"[STREAMLIT DEBUG] 🔐 Encryption status: {email.get('is_encrypted', False)}")
+                                print(f"[STREAMLIT DEBUG] 🔒 TLS used: {email.get('tls_used', False)}")
+                                
+                                # Store for display
                                 st.session_state[f'decrypt_{email["_id"]}'] = True
+                                st.session_state[f'decrypted_content_{email["_id"]}'] = {
+                                    'content': content,
+                                    'subject': subject,
+                                    'from': from_addr,
+                                    'to': to_addrs
+                                }
+                                
+                                print(f"[STREAMLIT DEBUG] ===== END DECRYPT & VIEW =====")
+
+                        # Display logic for stored data
+                        if f'show_report_{email["_id"]}' in st.session_state and st.session_state[f'show_report_{email["_id"]}']:
+                            if f'report_data_{email["_id"]}' in st.session_state:
+                                st.write("📋 **Detailed Report** (also printed in terminal)")
+
+                        if f'reply_data_{email["_id"]}' in st.session_state:
+                            reply_data = st.session_state[f'reply_data_{email["_id"]}']
+                            st.write("💬 **Generated Reply** (also printed in terminal):")
+                            st.info(reply_data.get('reply', 'No reply generated'))
+
+                        if f'decrypted_content_{email["_id"]}' in st.session_state:
+                            decrypted = st.session_state[f'decrypted_content_{email["_id"]}']
+                            st.write("🔒 **Decrypted Content** (also printed in terminal):")
+                            st.code(decrypted.get('content', 'No content'))
                         
                         st.markdown("---")
             else:
